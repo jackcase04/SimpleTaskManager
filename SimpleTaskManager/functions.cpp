@@ -3,6 +3,8 @@
 #include <iostream>
 #include "functions.h"
 
+#include <psapi.h>
+
 using namespace std;
 
 Snapshot createSnapshot() {
@@ -23,17 +25,55 @@ Snapshot createSnapshot() {
 void printCurrentProcesses() {
     Snapshot snapshot = createSnapshot();
 
+    SIZE_T memory = 0;
+
     if (Process32First(snapshot.hSnap, &snapshot.pe)) {
         do {
-            std::wcout
+            // attempt to open process to access memory
+            HANDLE hProc = OpenProcess(
+                PROCESS_QUERY_INFORMATION |PROCESS_VM_READ,
+                FALSE,
+                snapshot.pe.th32ProcessID
+            );
+
+            if (hProc) {
+                PROCESS_MEMORY_COUNTERS pmc;
+
+                if (GetProcessMemoryInfo(hProc, &pmc, sizeof(pmc))) {
+                    memory = pmc.WorkingSetSize / 1024;
+                }
+                else {
+                    memory = 0;
+                }
+            }
+            else {
+                memory = 0;
+            }
+
+            if (!hProc == 0) {CloseHandle(hProc);}
+            
+            wcout
                 << L"Name: " << snapshot.pe.szExeFile
                 << "\033[" << 50 << 'G'
                 << L"PID: " << snapshot.pe.th32ProcessID
                 << "\033[" << 65 << 'G'
                 << L"Thread Count: " << snapshot.pe.cntThreads
                 << "\033[" << 85 << 'G'
-                << L"Priority: " << snapshot.pe.pcPriClassBase
-                << L"\n";
+                << L"Priority: " << snapshot.pe.pcPriClassBase;
+            if (memory == 0) {
+                wcout
+                    << "\033[" << 100 << 'G'
+                    << L"Memory Access Denied"
+                    << L"\n";
+            }
+            else {
+                wcout
+                    << "\033[" << 100 << 'G'
+                    << L"Memory: " << memory << L" KB"
+                    << L"\n";
+            }
+            cout << "-----------------------------------------------------------------------------------------------------------------------" << endl;
+
         } while (Process32Next(snapshot.hSnap, &snapshot.pe));
     }
 
@@ -47,6 +87,7 @@ int killByName(const wstring& name) {
 
     if (Process32First(snapshot.hSnap, &snapshot.pe)) {
         do {
+            // check if process is one to be killed (could be multiple, so don't stop after 1)
             if (name == snapshot.pe.szExeFile) {
                 HANDLE hProc = OpenProcess(PROCESS_TERMINATE, FALSE, snapshot.pe.th32ProcessID);
                 if (hProc) {
@@ -57,7 +98,7 @@ int killByName(const wstring& name) {
                             << L")\n";
                     }
                     else {
-                        std::wcout << L"Failed to kill PID "
+                        std::wcout << L"Failed to kill PID: "
                             << snapshot.pe.th32ProcessID
                             << L"\n";
                     }

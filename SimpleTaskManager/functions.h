@@ -8,6 +8,7 @@
 
 using namespace std;
 
+// Snapshot struct to better structure data
 struct Snapshot {
 	HANDLE hSnap;
 	PROCESSENTRY32 pe;

@@ -1,9 +1,4 @@
-#include <windows.h>
-#include <TlHelp32.h>
-#include <iostream>
 #include "functions.h"
-
-#include <psapi.h>
 
 using namespace std;
 

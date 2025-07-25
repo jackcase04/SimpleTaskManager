@@ -6,7 +6,7 @@
 #include <string>
 #include <iostream>
 
-using namespace std;
+#include <psapi.h>
 
 // Snapshot struct to better structure data
 struct Snapshot {

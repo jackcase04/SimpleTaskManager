@@ -26,7 +26,6 @@ int main()
     do {
         if (input == 'k') {
             cout << "Enter process name to be terminated." << endl;
-            //wcin >> input2;
             cin.ignore(1000,'\n');
             getline(wcin, input2);
             killed = killByName(input2);
@@ -35,7 +34,6 @@ int main()
             Sleep(2000);
         }
         else {
-            // Clear the screen
             system("cls");
 
             printCurrentProcesses();
